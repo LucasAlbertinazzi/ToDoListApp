@@ -6,13 +6,18 @@ namespace AppToDoList.Controllers
 {
     public class TarefaController : Controller
     {
+        #region 1 - VARIÁVEIS
         private readonly DbToDoListContext _context;
+        #endregion
 
+        #region 2 - CONSTRUTORES
         public TarefaController(DbToDoListContext context)
         {
             _context = context;
         }
+        #endregion
 
+        #region 3 - MÉTODOS
         // GET: Tarefa
         public async Task<IActionResult> Index()
         {
@@ -74,6 +79,7 @@ namespace AppToDoList.Controllers
             return View(tarefa);
         }
 
+        // GET: Tarefa/Edit/
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit([Bind("IdTarefas,Titulo,Descricao,Status")] TblTarefa tarefa)
@@ -165,5 +171,6 @@ namespace AppToDoList.Controllers
         {
             return _context.TblTarefas.Any(e => e.IdTarefas == id);
         }
+        #endregion
     }
 }
