@@ -1,5 +1,4 @@
 ﻿using AppToDoList.Data;
-using AppToDoList.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,9 +6,9 @@ namespace AppToDoList.Controllers
 {
     public class TarefaController : Controller
     {
-        private readonly ToListDbContext _context;
+        private readonly DbToDoListContext _context;
 
-        public TarefaController(ToListDbContext context)
+        public TarefaController(DbToDoListContext context)
         {
             _context = context;
         }
@@ -17,24 +16,19 @@ namespace AppToDoList.Controllers
         // GET: Tarefa
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Tarefas.ToListAsync());
-        }
+            var tarefas = await _context.TblTarefas
+                                .Select(t => new TblTarefa
+                                {
+                                    IdTarefas = t.IdTarefas,
+                                    Titulo = t.Titulo,
+                                    Descricao = t.Descricao,
+                                    Status = t.Status,
+                                    DataCriacao = t.DataCriacao,
+                                    DataConclusao = t.DataConclusao
+                                })
+                                .ToListAsync();
 
-        // GET: Tarefa/Details/5
-        public async Task<IActionResult> Details(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var tarefa = await _context.Tarefas.FirstOrDefaultAsync(m => m.Id == id);
-            if (tarefa == null)
-            {
-                return NotFound();
-            }
-
-            return View(tarefa);
+            return View(tarefas);
         }
 
         // GET: Tarefa/Create
@@ -46,15 +40,22 @@ namespace AppToDoList.Controllers
         // POST: Tarefa/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Titulo,Descricao,Concluida,DataCriacao,DataConclusao")] TarefaInfo tarefa)
+        public async Task<IActionResult> Create([Bind("IdTarefas,Titulo,Descricao,Status,DataCriacao,DataConclusao")] TblTarefa tarefaInfo)
         {
             if (ModelState.IsValid)
             {
-                _context.Add(tarefa);
+                var novaTarefa = new TblTarefa
+                {
+                    Titulo = tarefaInfo.Titulo,
+                    Descricao = tarefaInfo.Descricao,
+                    DataCriacao = DateTime.Now
+                };
+
+                _context.Add(novaTarefa);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            return View(tarefa);
+            return View(tarefaInfo);
         }
 
         // GET: Tarefa/Edit/5
@@ -65,7 +66,7 @@ namespace AppToDoList.Controllers
                 return NotFound();
             }
 
-            var tarefa = await _context.Tarefas.FindAsync(id);
+            var tarefa = await _context.TblTarefas.FindAsync(id);
             if (tarefa == null)
             {
                 return NotFound();
@@ -73,26 +74,24 @@ namespace AppToDoList.Controllers
             return View(tarefa);
         }
 
-        // POST: Tarefa/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Titulo,Descricao,Concluida,DataCriacao,DataConclusao")] TarefaInfo tarefa)
+        public async Task<IActionResult> Edit([Bind("IdTarefas,Titulo,Descricao,Status")] TblTarefa tarefa)
         {
-            if (id != tarefa.Id)
-            {
-                return NotFound();
-            }
-
             if (ModelState.IsValid)
             {
                 try
                 {
-                    _context.Update(tarefa);
+                    _context.Attach(tarefa); // Anexa a entidade ao contexto
+                    _context.Entry(tarefa).Property("Titulo").IsModified = true; // Define que a propriedade Titulo será modificada
+                    _context.Entry(tarefa).Property("Descricao").IsModified = true; // Define que a propriedade Descricao será modificada
+                    _context.Entry(tarefa).Property("Status").IsModified = true; // Define que a propriedade Status será modificada
+
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!TarefaExists(tarefa.Id))
+                    if (!TarefaExists(tarefa.IdTarefas))
                     {
                         return NotFound();
                     }
@@ -114,13 +113,13 @@ namespace AppToDoList.Controllers
                 return NotFound();
             }
 
-            var tarefa = await _context.Tarefas.FirstOrDefaultAsync(m => m.Id == id);
+            var tarefa = await _context.TblTarefas.FirstOrDefaultAsync(m => m.IdTarefas == id);
             if (tarefa == null)
             {
                 return NotFound();
             }
 
-            return View(tarefa);
+            return View(tarefa); // Renderiza a view Delete com os detalhes da tarefa
         }
 
         // POST: Tarefa/Delete/5
@@ -128,15 +127,43 @@ namespace AppToDoList.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var tarefa = await _context.Tarefas.FindAsync(id);
-            _context.Tarefas.Remove(tarefa);
+            var tarefa = await _context.TblTarefas.FindAsync(id);
+
+            // Verifica se a tarefa foi encontrada
+            if (tarefa == null)
+            {
+                return NotFound(); // Ou qualquer outra ação apropriada
+            }
+
+            _context.TblTarefas.Remove(tarefa);
             await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index)); // Redireciona para a página de índice após a exclusão
+        }
+
+        // POST: Tarefa/Concluir/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Concluir(int id)
+        {
+            var tarefa = await _context.TblTarefas.FindAsync(id);
+
+            if (tarefa == null)
+            {
+                return NotFound();
+            }
+
+            tarefa.Status = true;
+            tarefa.DataConclusao = DateTime.Now;
+            _context.Update(tarefa);
+            await _context.SaveChangesAsync();
+
             return RedirectToAction(nameof(Index));
         }
 
         private bool TarefaExists(int id)
         {
-            return _context.Tarefas.Any(e => e.Id == id);
+            return _context.TblTarefas.Any(e => e.IdTarefas == id);
         }
     }
 }

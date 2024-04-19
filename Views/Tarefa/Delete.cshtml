@@ -1,0 +1,29 @@
+﻿@model AppToDoList.Data.TblTarefa
+
+@{
+    ViewData["Title"] = "Excluir Tarefa";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<hr />
+
+<div>
+    <h4>Tem certeza que deseja excluir esta tarefa?</h4>
+    <div>
+        <h5>Título:</h5>
+        <p>@Model.Titulo</p>
+    </div>
+    <div>
+        <h5>Descrição:</h5>
+        <p>@Model.Descricao</p>
+    </div>
+    <div>
+        <h5>Status:</h5>
+        <p>@(Model.Status ? "Finalizado" : "Pendente")</p>
+    </div>
+    <form asp-action="Delete" asp-route-id="@Model.IdTarefas" method="post">
+        <input type="submit" value="Confirmar exclusão" class="btn btn-danger" />
+        <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>

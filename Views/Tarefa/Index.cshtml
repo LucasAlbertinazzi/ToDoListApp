@@ -1,0 +1,79 @@
+﻿@model IEnumerable<AppToDoList.Data.TblTarefa>
+
+@{
+    ViewData["Title"] = "Lista de Tarefas";
+}
+
+<style>
+    .grid-container {
+        border: 1px solid #ccc; /* Adiciona uma borda cinza ao redor do grid */
+        padding: 20px; /* Adiciona um espaçamento interno ao grid */
+        margin-top: 20px; /* Define uma margem superior para afastar o grid do topo */
+    }
+
+    .error-message {
+        border: 2px solid #ff0000; /* Adiciona uma borda vermelha à mensagem de erro */
+        border-radius: 6px; /* Adiciona um raio de 6 pixels em todos os cantos */
+        padding: 10px; /* Adiciona um espaçamento interno à mensagem de erro */
+        width: fit-content; /* Define a largura da mensagem de erro para se ajustar ao conteúdo */
+        margin: 0 auto; /* Centraliza horizontalmente a mensagem de erro */
+        margin-top: 20px; /* Define uma margem superior para afastar a mensagem de erro do grid */
+    }
+
+</style>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8 grid-container">
+            <div class="text-center">
+                <h1 class="display-4">Lista de Tarefas</h1>
+            </div>
+            <div class="mt-3">
+                <a asp-action="Create" class="btn btn-primary">Adicionar Tarefa</a>
+            </div>
+            <div class="mt-3">
+                @if (Model != null && Model.Any())
+                {
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Título</th>
+                                <th>Descrição</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var tarefa in Model)
+                            {
+                                <tr>
+                                    <td>@tarefa.Titulo</td>
+                                    <td>@tarefa.Descricao</td>
+                                    <td>@(tarefa.Status ? "Finalizado" : "Pendente")</td>
+                                    <td>
+                                        <div class="btn-group" role="group" aria-label="Ações">
+                                            @if (!tarefa.Status)
+                                            {
+                                                <a asp-action="Edit" asp-route-id="@tarefa.IdTarefas" class="btn btn-sm btn-primary">Editar</a>
+                                                <a asp-action="Delete" asp-route-id="@tarefa.IdTarefas" class="btn btn-sm btn-danger">Remover</a>
+                                                <form asp-action="Concluir" asp-route-id="@tarefa.IdTarefas" method="post">
+                                                    <button type="submit" class="btn btn-sm btn-success">Finalizar</button>
+                                                </form>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <p class="error-message text-center">Não existem tarefas no momento.</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+
